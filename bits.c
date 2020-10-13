@@ -156,10 +156,9 @@ int bitXor(int x, int y) {
  *   Rating: 1
  */
 int tmin(void) {
-  unsigned int a = ~0;
-  unsigned int b = ~(a>>1);
+  int a = 0x80<<24;
 
-  return (int)b;
+  return a;
 
 }
 //2
@@ -171,10 +170,11 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  unsigned int a = (~0)>>1;
-  int b = (int)a;  
-  
-  return !(b^x);
+  int a = x+x+2;
+  int b = x+1;
+	
+  a= a+!b;
+  return !a;
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -185,11 +185,13 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  int a = 0xaaaaaaaa;
-  int b = x&a;
+  int bit24 = x >> 24;
+  int bit16 = (x << 8)>>24;
+  int bit8 = (x << 16)>>24;
+//  int bit0 = (x << 24)>>24;
 
 
-  return !(b^a);
+  return !((~(bit24 & bit16 & bit8 & x))&0xaa);
 }
 /* 
  * negate - return -x 
@@ -244,8 +246,12 @@ int conditional(int x, int y, int z) {
 int isLessOrEqual(int x, int y) {
   int a = y+(~x)+1;
   int b = a>>31;
+  int sy = y>>31;
+  int sx = x>>31;
+  int s = ~sy+sx+2;
+  int ns = ~sx+sy+2;
 
-  return !b;
+  return ((!b)|(!s))&ns;
 }
 //4
 /* 
@@ -326,7 +332,7 @@ int floatFloat2Int(unsigned uf) {
   unsigned shift;
   int ret;
   
-  if(exp > 0x9Fu) 
+  if((exp >= 0x9F)) 
     return 0x80000000;
   
   if(exp < 0x127)
@@ -343,7 +349,9 @@ int floatFloat2Int(unsigned uf) {
   }
   
   if((uf >> 31)  != 0){
-    ret  = (~ret)+1;	  
+    ret  = (~ret)+1;
+  }
+  	  
   return ret;
 }
 /* 
@@ -360,5 +368,24 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+    unsigned ret;    
+    unsigned exp;
+    unsigned f;
+    if(x > 127)
+	return 0x7F800000;
+    if(x < -149)
+	return 0;
+    
+    if(x >= -126){
+	exp = x+127;
+	f = 0x0;
+    }
+    else if(x < -126){
+	exp = 0x0;
+	f = 1<<(149+x);
+    }
+
+    ret = (exp << 23)|f;
+
+    return ret;
 }
