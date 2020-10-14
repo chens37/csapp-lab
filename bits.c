@@ -246,12 +246,10 @@ int conditional(int x, int y, int z) {
 int isLessOrEqual(int x, int y) {
   int a = y+(~x)+1;
   int b = a>>31;
-  int sy = y>>31;
-  int sx = x>>31;
-  int s = ~sy+sx+2;
-  int ns = ~sx+sy+2;
+  int sy = !((y>>31)+1);
+  int sx = !((x>>31)+1);
 
-  return ((!b)|(!s))&ns;
+  return ((!sy)&sx)|(((!((!sx)&sy)) &(!b) ));
 }
 //4
 /* 
@@ -281,9 +279,29 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
-  
+  int b16;
+  int b8;
+  int b4;
+  int b2;
+  int b1;
+  int b0;
+  int s = (x>>31); 
 
-  return 0;
+  x = (s&(~x))|((~s)&x);
+
+  b16 = (!!(x>>16))<<4;
+  x = x>>b16;
+  b8 = (!!(x>>8))<<3;
+  x = x>>b8;
+  b4 = (!!(x>>4))<<2;
+  x = x>>b4;
+  b2 = (!!(x>>2))<<1;
+  x = x>>b2;
+  b1 = !!(x>>1);
+  x = x>>b1;
+  b0 = x;
+
+  return b0+b1+b2+b4+b8+b16+1;
 }
 //float
 /* 
@@ -300,17 +318,24 @@ int howManyBits(int x) {
 unsigned floatScale2(unsigned uf) {
   unsigned exp = (uf<<1) >> 24;
   unsigned f = uf&0x007fffff;
+  unsigned s = uf >>31;
   unsigned ret;
 
-  if((exp == 0xFF) && (f != 0)){
+  if(exp == 0xFF){
     return uf;
-  }
+  }else if((exp == 0) && (f == 0))
+    return uf;
 
   if(exp == 0xFE) {
-    ret = ((uf>>31)<<31)|(0xFF<<23);
-  }else {
-    ret = uf|((exp+1) << 23);
+    ret = (s<<31)|(0xFF<<23);
+  }else if(exp == 0x0) {
+    f = f <<1;
+    exp = f>>23;
+    ret = (s<<31)|f|(exp << 23);
+  } else{
+    ret = (s<<31)|f|((exp+1) << 23);
   }
+
 
   return ret;
 }
@@ -335,10 +360,10 @@ int floatFloat2Int(unsigned uf) {
   if((exp >= 0x9F)) 
     return 0x80000000;
   
-  if(exp < 0x127)
+  if(exp < 127)
     return 0;
   
-  shift = exp-0x127;
+  shift = exp-127;
 
   ret = (f|(1<<23));
 
